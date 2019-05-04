@@ -1,0 +1,90 @@
+#Hi everyone, this is my code for reference
+
+# 1. Solve the following problem using simulation in R: Suppose that 20 people {Ann, Bill, Charlie, Daria, . . . } are seated randomly around a round table. What is the probability that Ann and Bill are seated next to one another?
+
+```{r}
+k=1000
+
+#I create holding matrices for the data I will generate
+out_a = matrix(NA, nrow = k, ncol = 2)
+out_b = matrix(NA, nrow = k, ncol = 1)
+
+#I use a double-loop to generate the data - the inner loop takes results from a random sample of 19 elements (1:19) and records the first 2 outcomes in the 2 columns of the out_a matrix (representing left and right seats, respectively). In the second loop, I then sum the number of 1s in both columns and divide by the number of times this was run in the inner loop (1000). The second loop then reruns the first loop 1000 times to get 1000 estimates of this ratio, storing it in the out_b matrix. Finally, I then take the average of these 1,000,000 iterations. 
+
+for (j in 1:k){
+  for (i in 1:k) {
+  x=sample(19,2)
+  out_a[i,1]=x[1]
+  out_a[i,2]=x[2]}
+  b<-as.data.frame(table(out_a))
+  out_b[j,1]=mean(b[,2])/k}
+  mean(out_b)
+```
+
+#2. Simulate some data from the following model for sample sizes n = 10; 20; : : : ; 990; 1000::
+
+#Draw the Xs from a standard Normal distribution. Set a = 1; b1 = 2; b2 = 3 and chi2 = 6. Then, write some code to compute the OLS estimates of the parameters. Produce a figure that shows the effects of sample size on the estimate of b2. See below for an example.
+
+```{r}
+#First I basically set up the fixed variables and number of samples without using sequence (same result) 
+nx=(1:100)
+n=nx*10
+a=1
+b1=2
+b2=3
+output=matrix(NA, nrow=100, ncol=5)
+
+#I then write a function for confidence interval for the upper and lower limit referencing Vero's code (thanks Vero!)
+
+Up_lim <- function(coef, se, alpha) {
+  z.stat <- qnorm(alpha/2 , 0, 1)
+  upper_int <- coef + z.stat*se
+  return(upper_int)
+}
+
+Low_lim <- function(coef, se, alpha) {
+  z.stat <- qnorm(alpha/2 , 0, 1)
+  lower_int <- coef - z.stat*se
+  return(lower_int)
+}
+```
+
+
+```{r} 
+
+#Column 1 = number of samples
+output[,1]=n
+
+#Run a loops for the different sample sizes
+  for (i in 1:length(n)){
+  x1=rnorm(i*10)
+  x2=rnorm(i*10)
+  y=a+b1*x1+b2*x2
+  e_g=rnorm(i*10, mean=0, sd=6)
+  y_star=y+e_g
+  sum<-summary(lm(y_star ~ 1+x1+x2))
+  
+#Column 2 = Point Estimate of x2
+  output[i,2]=sum$coefficients[3,1]
+  
+#Column 3 = SE of X2
+  output[i,3]=sum$coefficients[3,2]
+  
+#Column 4 = Upper Limit of X2  
+  output[i,4]=Up_lim(output[i,2], output[i,3], alpha=0.05)
+
+#Column 5 = Lower Limit of X2  
+  output[i,5]=Low_lim(output[i,2], output[i,3], alpha=0.05)}
+```
+
+```{r}
+#I finally plotted the graph and changed the markers, colour, and line dash density to the one Gyung-Ho used.
+
+plot(output[,1], output[,2], type="b", col="red", xlab="Sample Size", ylab="??2", pch=2, lty=1)
+lines(output[,1], output[,4], type = "b", col = "purple", lty=3)
+lines(output[,1], output[,5], type = "b", col = "purple", lty=3)
+abline(h=3)
+legend("topright", legend=c("95% Confidence Intervals", "Point Estimates", "True Value"),
+       col=c("purple", "red", "black"), lty=c(3,1,1), cex=0.8)
+     
+ ```
