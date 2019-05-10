@@ -1,0 +1,75 @@
+---
+title: "POLI574 Homework 1"
+author: "Nathan Peng"
+date: "9 May 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#PART III
+
+```{r}
+#FOr 2.2
+
+#Setting Parameters and Generating Data
+a1=1
+b1=1
+lik1<-rpois(10, 1)
+pri1<-rgamma(10, shape=a1, rate=b1)
+post1<-lik1*pri1
+
+#Plotting Histogram
+hist(post1, main="Histogram of Posterior Distribution", xlab="Theta", ylab="Frequency")
+d1<-density(post1)
+
+#I used the posterior definitions for aplha and beta to generate the credibility intervals (apha1 = Sigma(yi) + alpha0, and beta1=n + beta0), using the gamma quantile (qgamma) command
+
+a0=11+1
+b0=10+1
+quant1<-qgamma(c(0.025,0.975), shape=a0, rate=b0)
+
+#Plotting density funciton with relevant markers
+
+plot(d1, main="Posterior Distribution", xlab="Theta", ylab="Probability")
+abline(v=mean(post1), col="red", lty=1)
+text(mean(post1)+1,0.1,labels="Expected Mean", cex=1)
+
+abline(v=quant1[1], col="blue", lty=3)
+text(quant1[1]-1,0.25,labels="Lower limit", cex=1)
+
+abline(v=quant1[2], col="blue", lty=3)
+text(quant1[2]+1,0.25,labels="Upper limit", cex=1)
+
+```
+
+```{r}
+#PART IV
+
+#Setting Parameters and Generating Data
+lik2<-rpois(1000, 1)
+pri2<-rgamma(1000, shape=a1, rate=b1)
+post2<-lik2*pri2
+
+#Plotting Histogram
+hist(post2, main="Histogram of Posterior Distribution, n=1000", xlab="Theta", ylab="Frequency")
+d2<-density(post2)
+
+#Again, I used the posterior definitions for aplha and beta to generate the credibility intervals (apha1 = Sigma(yi) + alpha0, and beta1=n + beta0), using the gamma quantile (qgamma) command
+a2=sum(post2)+1
+b2=1000+1
+quant2<-qgamma(c(0.025,0.975), shape=a2, rate=b2)
+
+#Plotting density funciton with relevant markers
+plot(d2, main="Posterior Distribution", xlab="Theta", ylab="Probability", xaxp  = c(-1, 10, 11))
+abline(v=mean(post2), col="red", lty=1)
+text(mean(post2)+2.5,0.4,labels="Expected Mean", cex=0.75)
+
+abline(v=quant2[1], col="blue", lty=3)
+text(quant2[1]+1.5,0.2,labels="Lower limit", cex=0.75)
+
+abline(v=quant2[2], col="blue", lty=3)
+text(quant2[2]+1.5,0.6,labels="Upper limit", cex=0.75)
+```
