@@ -1,0 +1,177 @@
+---
+title: "Gelman Problemset 1"
+author: Mitchell Bosley
+date: May 10 2019
+output: pdf_document
+---
+
+# QUESTION 1
+
+## (A)
+
+The definition of the conjugate prior is as follows: suppose a prior density $p(\theta)$ belongs to a class of parametric densities $\mathcal{F}$. Then the prior density is said to be conjugate with respect to a likelihood $x(\mathbf{y}|\theta)$ if the posterior density $p(\theta|\mathbf{y})$ is also in $\mathcal{F}$.
+
+The gamma distribution is a conjugate prior for the Poisson distribution if the posterior density of the Poisson distributions with a gamma prior is also the gamma distribution.
+
+If the parameter $\theta$ is distributed according to the Gamma distribution, its density function is:
+
+$$
+p(\theta;\alpha,\beta) = \frac{\beta^\alpha \theta^{\alpha-1}e^{-\beta \theta}}{\Gamma(\alpha)}
+$$
+
+The Poisson distribution has the mass function
+
+$$
+p(y_i|\theta) = \prod_{i=1}^n\frac{\theta^{y_i}e^{-\theta n}}{y_i!} = \frac{\theta^{\sum y_i}e^{-\theta n}}{\prod_{i=1}^ny_i!}
+$$
+
+By Bayes rule:
+
+$$
+p(\theta|y_i) = \frac{p(y_i|\theta) p(\theta;\alpha,\beta)}{\int_0^1p(y_i|\theta) p(\theta;\alpha,\beta)d\theta}
+$$
+
+Which can also be expressed as
+
+$$
+\begin{aligned}
+p(\theta|y_i) &\propto p(y_i|\theta) p(\theta;\alpha,\beta) \\
+&\propto \theta^{\sum y_i}e^{-\theta n}\theta^{\alpha-1}e^{-\beta\theta} \\
+&\propto \theta^{\sum y_i+\alpha-1}e^{-\theta(n + \beta)}
+\end{aligned}
+$$
+
+Where all terms not evaluating $\theta$ are sucked into the conditioning term.
+
+Therefore, $p(\theta|y_i) \sim Gamma(\sum y_i + \alpha, n + \beta)$. Because the posterior is distributed the same as the prior, the Gamma distribution is a conjugate prior with respect to the Poisson.
+
+## (B)
+
+To find the maximum likelihood, find the log-likelihood function for the Poisson distribution, then take the first derivative with respect to $\theta$, and solve for $\theta$: 
+
+$$
+\begin{aligned}
+\mathcal{L}(\theta|y_1, \dots, y_n) &= \prod_{i=1^j}\frac{\theta^{y_i}e^{-\theta}}{y_i!} \\
+l(\theta|y_1,\dots,y_n) &= ln\bigg(\prod_{i=1^j}\frac{\theta^{y_i}e^{-\theta}}{y_i!}\bigg) \\
+&= -n\theta - \sum_{i=1}^n \ln(y_i!) + \ln(\theta)\sum_{i=1}^n y_i \\
+\frac{\delta l}{\delta \theta} &= 0 = -n + \frac{\sum_{i=1}^ny_i}{\theta} \\
+n &= \frac{\sum_{i=1}^ny_i}{\theta} \\
+\hat\theta &= \frac{1}{n}\sum_{i=1}^ny_i = \bar y
+\end{aligned}
+$$
+
+Because the $\theta$ that maximizes the log-likelihood also maximizes the likelihood, it follows that the $\theta$ that maximizes the likelihood for for the Poisson distribution is $\bar y$.
+
+## (C)
+
+Note that the expected value of the likelihood is $\bar y$, and the expected value of the gamma distribution is $\frac{\alpha}{\beta}$. 
+
+$$
+\begin{aligned}
+E[\theta|y_i] &= \frac{\sum y_i + \alpha}{\beta + n} \\
+&= \frac{\sum y_i}{\beta + n} + \frac{\alpha}{\beta + n} \\
+&= \frac{\sum y_i}{\beta + n}\frac{n}{n} + \frac{\alpha}{\beta + n}\frac{\beta}{\beta} \\
+&= \bar y \cdot \frac{n}{\beta + n} + \frac{\alpha}{\beta}\cdot\frac{\beta}{\beta + n}
+\end{aligned} 
+$$
+
+As $n$ increases, the weight of the posterior shrinks.
+
+# QUESTION 2
+
+## (A)
+
+The gamma distribution is a conjugate prior for the exponential distribution.
+
+$$
+\begin{aligned}
+p(\theta|y_i) &\propto p(y_i|\theta)p(\theta|\alpha, \beta) \\ 
+&\propto \theta^n e^{-\theta \sum y_i} \theta^{\alpha-1}e^{-\beta \theta} \\
+&\propto \theta^{n+\alpha-1}e^{-\theta(\sum y_i + \beta)}
+\end{aligned}
+$$
+
+Therefore, $p(\theta|y_i) \sim Gamma(\alpha + n, \beta + \sum y_i)$, and the Gamma distribution is a conjugate prior with respect to the exponential distribution.
+
+## (B)
+
+$$
+\begin{aligned}
+\mathcal{L}(y_i|\theta) &= \prod_{i=1}^n \theta e^{-\theta y_i} \\
+l(y_i|\theta) &= \ln(\prod_{i=1}^n \theta e^{-\theta y_i}) \\
+&= n\ln(\theta) - \theta\sum_{i=1}^n y_i \\
+\frac{\delta l}{\delta \theta} = 0 &= \frac{n}{\theta}-\sum_{i=1}^n y_i \\
+\sum_{i=1}^n y_i &= \frac{n}{\theta} \\
+\hat \theta &= \frac{n}{\sum_{i=1}^n} = \frac{1}{\bar y}
+\end{aligned}
+$$
+
+## (C)
+
+$$
+\begin{aligned}
+E[\theta|y_i] &= \frac{\alpha + n}{\beta + \sum y_i} \\
+&= \frac{\alpha}{\beta + \sum y_i}\cdot\frac{\beta}{\beta} + \frac{n}{\beta + \sum y_i} \\
+&= \frac{\alpha}{\beta}\cdot\frac{\beta}{\beta + \sum y_i} + \frac{1}{\bar y}\cdot\frac{1}{\beta + \frac{1}{\sum y_i}}
+\end{aligned}
+$$
+
+# QUESTION 3
+
+## (A)
+
+$\mathbf{y} = (0, 2, 0, 2, 2, 0, 2, 0, 1, 2), \alpha = 1, \beta = 1$
+ 
+$\mathbf{\bar y} = 11/10 = 1.1$
+
+$E[\theta|y_i] = 1.1 \cdot \frac{10}{11} + \frac{1}{1} \cdot \frac{1}{11} = 1.09$
+
+## (B)
+
+$\mathbf{y} = (1.22, 0.17, 0.24, 0.20, 0.36), \alpha = 5, \beta = 2$
+
+$\mathbf{\bar y} = 0.438$
+
+$E[\theta|y_i] = \frac{5}{2} \cdot \frac{2}{2 + 2.19} + \frac{1}{0.438} \cdot \frac{1}{2 + 0.457} = 3.883$
+
+# QUESTION 4
+
+```{r}
+# n = 10
+n <- 10
+y <- rpois(n, lambda=1)
+prior <- rgamma(n, shape=1, rate=1)
+posterior <- y * prior / mean(y * prior)
+hist(x=posterior)
+plot(density(x=posterior))
+
+# n = 1000
+n <- 1000
+y <- rpois(n, lambda=1)
+prior <- rgamma(n, shape=1, rate=1)
+posterior <- y * prior / mean(y * prior)
+hist(x=posterior)
+plot(density(x=posterior))
+```
+
+# QUESTION 5
+
+```{r}
+library(bmixture)
+n <- 100
+y <- runif(n, 1, 6)
+hyperpar <- rep(2, 6)
+prior <- rdirichlet(n, hyperpar)
+posterior <- y * prior / mean(y * prior)
+hist(x=posterior)
+plot(density(x=posterior))
+
+n <- 1000
+y <- runif(n, 1, 6)
+hyperpar <- rep(2, 6)
+prior <- rdirichlet(n, hyperpar)
+posterior <- y * prior / mean(y * prior)
+hist(x=posterior)
+plot(density(x=posterior))
+```
+
