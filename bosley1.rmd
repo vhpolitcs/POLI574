@@ -141,7 +141,7 @@ $E[\theta|y_i] = \frac{5}{2} \cdot \frac{2}{2 + 2.19} + \frac{1}{0.438} \cdot \f
 n <- 10
 y <- rpois(n, lambda=1)
 prior <- rgamma(n, shape=1, rate=1)
-posterior <- y * prior / mean(y * prior)
+posterior <- y * prior
 hist(x=posterior)
 plot(density(x=posterior))
 
@@ -149,7 +149,7 @@ plot(density(x=posterior))
 n <- 1000
 y <- rpois(n, lambda=1)
 prior <- rgamma(n, shape=1, rate=1)
-posterior <- y * prior / mean(y * prior)
+posterior <- y * prior 
 hist(x=posterior)
 plot(density(x=posterior))
 ```
@@ -162,7 +162,7 @@ n <- 100
 y <- runif(n, 1, 6)
 hyperpar <- rep(2, 6)
 prior <- rdirichlet(n, hyperpar)
-posterior <- y * prior / mean(y * prior)
+posterior <- y * prior 
 hist(x=posterior)
 plot(density(x=posterior))
 
@@ -170,7 +170,7 @@ n <- 1000
 y <- runif(n, 1, 6)
 hyperpar <- rep(2, 6)
 prior <- rdirichlet(n, hyperpar)
-posterior <- y * prior / mean(y * prior)
+posterior <- y * prior
 hist(x=posterior)
 plot(density(x=posterior))
 ```
