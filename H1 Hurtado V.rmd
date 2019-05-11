@@ -3,8 +3,8 @@ title: "Homework 1"
 author: "Veronica Hurtado"
 date: '2019-05-11'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,8 +30,7 @@ posterior1<-as.data.frame(posterior)
 Ploting the posterior distribution as a histogram 
 
 ```{r}
-hist(posterior, main="Histogram of the Posterior Distribution", xlab="Theta", ylab="Frequency", border="blue", 
-     col="darkblue")
+hist(posterior, main="Histogram of the Posterior Distribution", xlab="Theta", ylab="Frequency", border="blue", col="darkblue")
 d<-density(posterior)
 ```
 
@@ -61,15 +60,15 @@ Plotting density funciton with relevant markers
 mean(posterior)
 
 plot(d, main="Posterior Distribution", xlab="Theta", ylab="Probability")
-abline(v=mean(posterior), col="red", lty=1)
+abline(v=mean(posterior), col="red", lty=1) 
 text(mean(posterior)+1,0.1,labels="Expected Mean", cex=1)
 
-cred[1]-1
+cred[1]
 
 abline(v=cred[1], col="blue", lty=3)
 text(cred[1]-1,0.25,labels="Lower limit", cex=1)
 
-cred[2]+1
+cred[2]
 
 abline(v=cred[2], col="blue", lty=3)
 text(cred[2]+1,0.25,labels="Upper limit", cex=1)
@@ -84,7 +83,7 @@ Defining the likelihood, prior and posterior.
 ```{r}
 likelihood2<-rpois(1000, 1)
 
-prior2<-rgamma(10, alpha_0, beta_0)
+prior2<-rgamma(1000, alpha_0, beta_0)
 hist(prior2, main="Histogram of the Prior Distribution")
 
 posterior2<-likelihood2*prior2
@@ -102,39 +101,30 @@ d2<-density(posterior2)
 Density plot with credibility intervals and mean.
 
 ```{r}
-alpha_1=sum(posterior, na.rm = FALSE)+alpha_0
+alpha_1=sum(posterior2)+alpha_0
 alpha_1
 
-beta_1=beta_0+10
+beta_1=beta_0+1000
 beta_1
 
 cred2<-qgamma(c(0.025,0.975), shape=alpha_1, rate=beta_1)
+cred2
+
+cred2[1]
+cred2[2]
+
 ```
 
 Plotting density funciton with relevant markers
 
 ```{r}
-mean(posterior2)
-
 plot(d2, main="Posterior Distribution", xlab="Theta", ylab="Probability")
 abline(v=mean(posterior2), col="red", lty=1)
 text(mean(posterior2)+1,0.1,labels="Expected Mean", cex=1)
-
-cred2[1]-1
-
 abline(v=cred2[1], col="blue", lty=3)
-text(cred2[1]-1,0.25,labels="Lower limit", cex=1)
-
-cred2[2]+1
-
+text(cred2[1]-0.75,0.25,labels="Lower limit", cex=1)
 abline(v=cred2[2], col="blue", lty=3)
-text(cred2[2]+1,0.25,labels="Upper limit", cex=1)
-```
+text(cred2[2]+3,0.25,labels="Upper limit", cex=1)
 
-As the n increases...
-
-```{r}
-
-y_bar <- sum(posterior2)*1/1000
 
 ```
