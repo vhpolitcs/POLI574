@@ -1,3 +1,94 @@
+#[ALTERNATIVE VERSION - See lines 18-24, 55-61]
+
+---
+title: "POLI574 Homework 1"
+author: "Nathan Peng"
+date: "9 May 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(varbvs)
+```
+
+#PART III
+
+```{r}
+#Setting Parameters and Generating Data
+set.seed(1)
+n1=10
+lik1<-rpois(n1, lambda=1)
+a1=sum(lik1)+1
+b1=n1+1
+post1<-rgamma(10000, shape=a1, rate=b1)
+
+#Note: I use set.seed to make labeling for the density plot easier and a high number of draws for the resulting posterior distribution since no specific instructions were given and we want as accurate a plot as possible for the posterior density function.
+
+#Plotting Histogram
+hist(post1, main="Histogram of Posterior Distribution, n=10", xlab="Theta", ylab="Density", freq=F)
+
+```
+
+```{r}
+#Using the "cred"" function to calculate the credibilty intervals based on the sampled posterior density distribution
+quant1<-cred(post1, mean(post1), w=NULL, cred.int=0.95)
+
+#Plotting density funciton with relevant markers
+d1<-density(post1)
+plot(d1, main="Posterior Distribution", xlab="Theta", ylab="Density")
+abline(v=mean(post1), col="red", lty=1)
+text(mean(post1)+0.3,0.6,labels="Expected Mean", cex=1)
+
+abline(v=quant1$a, col="blue", lty=3)
+text(quant1$a-0.3,0.25,labels="Lower limit", cex=1)
+
+abline(v=quant1$b, col="blue", lty=3)
+text(quant1$b+0.3,0.25,labels="Upper limit", cex=1)
+
+```
+
+
+#PART IV
+
+```{r}
+#Setting Parameters and Generating Data
+n2=1000
+set.seed(1)
+lik2<-rpois(n2, lambda=1)
+a2=sum(lik2)+1
+b2=n2+1
+post2<-rgamma(10000, shape=a2, rate=b2)
+
+#Note: I use set.seed to make labeling for the density plot easier and a high number of draws for the resulting posterior distribution since no specific instructions were given and we want as accurate a plot as possible for the posterior density function.
+
+#Plotting Histogram
+hist(post2, main="Histogram of Posterior Distribution, n=1000", xlab="Theta", ylab="Density", freq=F)
+
+```
+
+```{r}
+#Using the "cred"" function to calculate the credibilty intervals based on the sampled posterior density distribution
+
+quant2<-cred(post2, mean(post2), w=NULL, cred.int=0.95)
+
+#Plotting density funciton with relevant markers
+d2<-density(post2)
+plot(d2, main="Posterior Distribution", xlab="Theta", ylab="Density", xaxp  = c(-1, 10, 11))
+abline(v=mean(post2), col="red", lty=1)
+text(mean(post2)+0.03,8,labels="Expected Mean", cex=0.75)
+
+abline(v=quant2$a, col="blue", lty=3)
+text(quant2$a-0.03,5,labels="Lower limit", cex=0.75)
+
+abline(v=quant2$b, col="blue", lty=3)
+text(quant2$b+0.03,5,labels="Upper limit", cex=0.75)
+```
+
+# Comparing the two graphs in Parts III and IV, we see that as n gets large, the spread of the posterior density, and the width of the corresponding credibility intervals, becomes smaller. In this case, since the prior (a gamma distribution with a=1 and b=1) and the data (a poisson distribution with lambda 1) are similarly shaped there are no discernable differences in whether the posterior conforms to the prior or the liklihood function. 
+
+
+#[ORIGINAL VERSION]
 ---
 title: "POLI574 Homework 1"
 author: "Nathan Peng"
