@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(varbvs)
 ```
 
 #PART III
@@ -17,59 +18,76 @@ knitr::opts_chunk$set(echo = TRUE)
 #Setting Parameters and Generating Data
 a1=1
 b1=1
+set.seed(1)
 lik1<-rpois(10, 1)
+set.seed(2)
 pri1<-rgamma(10, shape=a1, rate=b1)
 post1<-lik1*pri1
 
+#Note: I use set.seed to make labeling for the density plot easier.
+
 #Plotting Histogram
-hist(post1, main="Histogram of Posterior Distribution", xlab="Theta", ylab="Frequency")
 d1<-density(post1)
-
-#I used the posterior definitions for aplha and beta to generate the credibility intervals (apha1 = Sigma(yi) + alpha0, and beta1=n + beta0), using the gamma quantile (qgamma) command
-
-a0=11+1
-b0=10+1
-quant1<-qgamma(c(0.025,0.975), shape=a0, rate=b0)
-
-#Plotting density funciton with relevant markers
-
-plot(d1, main="Posterior Distribution", xlab="Theta", ylab="Probability")
-abline(v=mean(post1), col="red", lty=1)
-text(mean(post1)+1,0.1,labels="Expected Mean", cex=1)
-
-abline(v=quant1[1], col="blue", lty=3)
-text(quant1[1]-1,0.25,labels="Lower limit", cex=1)
-
-abline(v=quant1[2], col="blue", lty=3)
-text(quant1[2]+1,0.25,labels="Upper limit", cex=1)
+hist(post1, main="Histogram of Posterior Distribution", xlab="Theta", ylab="Density", freq=F)
 
 ```
 
 ```{r}
+#I used the posterior definitions for aplha and beta to generate the credibility intervals (apha1 = Sigma(yi) + alpha0, and beta1=n + beta0), using the gamma quantile (qgamma) command
+
+a0=11+1
+b0=10+1
+quant1<-cred(post1, mean(post1), w=NULL, cred.int=0.95)
+
+#Plotting density funciton with relevant markers
+
+plot(d1, main="Posterior Distribution", xlab="Theta", ylab="Density")
+abline(v=mean(post1), col="red", lty=1)
+text(mean(post1)+0.5,0.6,labels="Expected Mean", cex=1)
+
+abline(v=quant1$a, col="blue", lty=3)
+text(quant1$a-0.5,0.25,labels="Lower limit", cex=1)
+
+abline(v=quant1$b, col="blue", lty=3)
+text(quant1$b+0.5,0.25,labels="Upper limit", cex=1)
+
+```
+
+
 #PART IV
 
+```{r}
 #Setting Parameters and Generating Data
+set.seed(1)
 lik2<-rpois(1000, 1)
+set.seed(2)
 pri2<-rgamma(1000, shape=a1, rate=b1)
 post2<-lik2*pri2
 
-#Plotting Histogram
-hist(post2, main="Histogram of Posterior Distribution, n=1000", xlab="Theta", ylab="Frequency")
-d2<-density(post2)
+#Note: I use set.seed to make labeling for the density plot easier.
 
+
+#Plotting Histogram
+hist(post2, main="Histogram of Posterior Distribution, n=1000", xlab="Theta", ylab="Density", freq=F)
+d2<-density(post2)
+```
+
+```{r}
 #Again, I used the posterior definitions for aplha and beta to generate the credibility intervals (apha1 = Sigma(yi) + alpha0, and beta1=n + beta0), using the gamma quantile (qgamma) command
 a2=sum(post2)+1
 b2=1000+1
-quant2<-qgamma(c(0.025,0.975), shape=a2, rate=b2)
+quant2<-cred(post2, mean(post2), w=NULL, cred.int=0.95)
 
 #Plotting density funciton with relevant markers
-plot(d2, main="Posterior Distribution", xlab="Theta", ylab="Probability", xaxp  = c(-1, 10, 11))
+plot(d2, main="Posterior Distribution", xlab="Theta", ylab="Density", xaxp  = c(-1, 10, 11))
 abline(v=mean(post2), col="red", lty=1)
-text(mean(post2)+2.5,0.4,labels="Expected Mean", cex=0.75)
+text(mean(post2)+3,0.4,labels="Expected Mean", cex=0.75)
 
-abline(v=quant2[1], col="blue", lty=3)
-text(quant2[1]+1.5,0.2,labels="Lower limit", cex=0.75)
+abline(v=quant2$a, col="blue", lty=3)
+text(quant2$a+1.5,0.25,labels="Lower limit", cex=0.75)
 
-abline(v=quant2[2], col="blue", lty=3)
-text(quant2[2]+1.5,0.6,labels="Upper limit", cex=0.75)
+abline(v=quant2$b, col="blue", lty=3)
+text(quant2$b+1.5,0.25,labels="Upper limit", cex=0.75)
 ```
+
+# Comparing the two graphs in Parts III and IV, we see that as n gets large, the mean of the posterior results approximate the data over the prior - the mean of the (i) prior and the (ii) data drawn from the poisson distribution in III is 0.3844242 and 1.1, and for PART IV the prior and data means were 0.992095 and 1.015 in IV. I also note that that the width of the credibility interval does not necessarily decrease with n as the density distribution of the posterior got wider in IV with more values being drawn. 
