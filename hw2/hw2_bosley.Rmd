@@ -24,7 +24,7 @@ appointment_Length <- function() { round(runif(n=1, min=5, max=20), 0) }
 doc_Availability <- function(x) { return(which(x[1] == 0)) }
 
 # construct time measure
-calc_Minutes =  function(hours) { return(60 * hours) }
+calc_Minutes <- function(hours) { return(60 * hours) }
 
 # intake walk-in patient 
 patient_Intake <- function(totalPatients, waitLengths, doctors, waitingRoom) {
