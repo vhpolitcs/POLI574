@@ -161,7 +161,7 @@ mcmc <- function(p, states, burnin, runs) {
             draw <- rbinom(1, 1, p[1,2])
             if (draw == 1) {
                 value <- 2 
-           } 
+            } 
         } else {
             draw <- rbinom(1, 1, p[2, 2])
             if (draw == 1) {
@@ -170,18 +170,19 @@ mcmc <- function(p, states, burnin, runs) {
         }
     }
 
+
     # storing results
     values <- rep(NA, runs)
-    for (i in 1:runs){
+    for (i in 1:runs) {
         if (value == 1) {
-                draw <- rbinom(1, 1, p[1,2])
-                if (draw == 1) {
-                    value <- 2 
+            draw <- rbinom(1, 1, p[1,2])
+            if (draw == 1) {
+                value <- 2 
+            }
         } else {
             draw <- rbinom(1, 1, p[2, 2])
-                if (draw == 1) {
-                    value <- 1
-                }
+            if (draw == 1) {
+                value <- 1
             }
         }
         values[i] <- value
