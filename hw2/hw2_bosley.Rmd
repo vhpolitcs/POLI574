@@ -151,6 +151,44 @@ results[j,] <- c(mean(waitLengths), sum(waitLengths > 0), totalPatients, abs(min
 
 # 6.3
 ```{r}
+# Create MCMC function:
+mcmc <- function(p, states, burnin, runs) {
+
+    # burn-in:
+    value <- sample(states, 1)
+    for (i in 1:burnin) {
+        if (value == 1) {
+            draw <- rbinom(1, 1, p[1,2])
+            if (draw == 1) {
+                value <- 2 
+           } 
+        } else {
+            draw <- rbinom(1, 1, p[2, 2])
+            if (draw == 1) {
+                value <- 1
+            }
+        }
+    }
+
+    # storing results
+    values <- rep(NA, runs)
+    for (i in 1:runs){
+        if (value == 1) {
+                draw <- rbinom(1, 1, p[1,2])
+                if (draw == 1) {
+                    value <- 2 
+        } else {
+            draw <- rbinom(1, 1, p[2, 2])
+                if (draw == 1) {
+                    value <- 1
+                }
+            }
+        }
+        values[i] <- value
+    }
+    return(values)
+}
+
 # Create transition matrix
 a_1 <- 0.5
 a_2 <- 0.5
@@ -158,30 +196,10 @@ b_1 <- 0.5
 b_2 <- 0.5
 p <- matrix(data=c(a_1, a_2, b_1, b_2), nrow=2, byrow=TRUE)
 
+# specify number of states. (note that this code will only work for 2)
 states <- c(1,2)
-mcmc <- function(p, states, burnin) {
 
-# burn-in:
-    value <- sample(states, 1)
-    for (i in 1:burnin) {
-        if (value == 1) {
-            draw <- rbinom(1, 1, p[1,2])
-            if draw = 1 {
-                value <- 2 
-           } 
-        } else {
-            draw <- rbinom(1, 1, p[2, 2])
-            if draw = 1 {
-                value <- 1
-            }
-        }
-    }
-
-# storing results
-
-
-
-}
-p
+# run algorithm
+results <- mcmc(p, states, burnin=100, runs=1000)
 ```
 
