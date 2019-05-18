@@ -170,7 +170,6 @@ mcmc <- function(p, states, burnin, runs) {
         }
     }
 
-
     # storing results
     values <- rep(NA, runs)
     for (i in 1:runs) {
