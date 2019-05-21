@@ -1,0 +1,477 @@
+---
+title: "Homework 2"
+author: "Veronica Hurtado"
+date: '2019-05-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PART II
+
+3.1. I plot the two beta distributions using the parameters gather for n=100 and n=1000.  
+
+```{r }
+
+d1 <- rbeta(100, 21, 91)
+d2 <- rbeta(1000, 192, 820)
+
+plot(density(x=d2), col = "red",  main="Density plot for the posterior distribution.", sub="Red=1000, Blue=100.")
+lines(density(x=d1), col = "blue")
+```
+
+3.8. Bayes Facto for Sam and Levi
+
+```{r}
+
+sam <- c(0.9, 0.8, 0.7, 0.6, 0.5)
+levi <- c(0.1, 0.2, 0.3, 0.4, 0.5)
+
+e1 = 10
+e2 = 20
+
+m1 <- 100
+m2 <- 200
+
+M1a <- gamma(e1+1) / (2*m1 +1)^(e1+1)
+M2a <- (gamma(e1*sam +1)/(m1+1)^(e1*sam+1)) * (gamma(e1*levi +1)/(m1+1)^(e1*levi +1)) 
+
+BF_1 <- M1a/M2a
+
+l1 <- log10(BF_1)
+
+M1b <- gamma(e2+1) / (2*m2 +1)^(e2+1)
+M2b <- (gamma(e2*sam +1)/(m2+1)^(e2*sam+1)) * (gamma(e2*levi +1)/(m2+1)^(e2*levi +1)) 
+
+BF_2 <- M1b/M2b
+
+l2 <- log10(BF_2)
+
+l1
+l2
+
+```
+
+```{r}
+
+
+```
+
+## PART III
+
+6.1,
+
+```{r}
+dat <- c(1/3, 2/3, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1/4, 0, 0, 1/4, 1/2, 0, 0, 0, 0, 1/8, 7/8, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0)
+
+P <- matrix(data = dat, nrow = 6, ncol = 6, byrow = TRUE)
+
+library(matrixcalc)
+matrix.power(P,100)
+
+matrix.power(P,101)
+```
+
+6.3. 
+
+a)
+
+```{r}
+
+data <- c(0.75, 0.25, 0.125, 0.875)
+P_1 <- matrix(data = data, nrow = 2, ncol = 2, byrow = TRUE)
+matrix.power(P_1,2)
+
+```
+
+b)
+
+I take the vector of states (1,2) and sample one of those. Then, I create a loop for "burnin". Inside the loop, if state ==1, I ask the program to do a draw from the binomial distribution. Here, the third paramter is the specification that the second colum of the first row is the prob of changing from state 1 to state 2. Draw =1 is a success from the binomial distirbution. Success means that you change the state. 
+
+
+```{r}
+
+# Create MCMC function:
+mcmc <- function(p, states, burnin, runs) {
+    state <- sample(range, 1)
+    for (i in 1:burnin) {
+        if (state == 1) {
+            draw <- rbinom(1, 1, p[1, 2])
+            if (draw == 1) {
+                state <- 2 
+            } 
+        } 
+        if (state == 2) {
+            draw <- rbinom(1, 1, p[2, 1])
+            if (draw == 1) {
+                state <- 1
+            }
+        }
+    }
+    # storing results
+    states <- rep(NA, runs)
+    for (i in 1:runs) {
+        if (state == 1) {
+            draw <- rbinom(1, 1, p[1, 2])
+            if (draw == 1) {
+                state <- 2 
+            }
+        } else {
+            draw <- rbinom(1, 1, p[2, 1])
+            if (draw == 1) {
+                state <- 1
+            }
+        }
+        states[i] <- state #I am assigning the ith value to be the state of the MCMC at the end of everyloop.
+    }
+    return(states)
+}
+
+# specify number of states
+range <- c(1,2)
+
+# plot the comparison
+runs <- seq(1, 2000)
+pct_results <- rep(NA, length(runs))
+for (i in runs){
+results <- mcmc(p= P_1, states, burnin=100, runs=i)
+pct_results[i] <- sum(results[results==1]) / i 
+}
+Invariant = 1/3
+plot(x=runs, y=pct_results, type = 'l', col = 'black', xlab = 'Iterations', ylab = 'State = 1', main = 'Convergence of the Markov Chain to the Invariant Distribution')
+lines(Invariant, col = 'red', lwd= 5)
+
+```
+
+6.4.
+
+```{r}
+
+p <- 0.3
+q <- 0.3
+r <- 0.4
+
+walk <- function(p, q, r, steps){
+    outcome <- rep(NA, steps)
+    place <- 0
+    for (i in 1:steps){
+        step <- which(rmultinom(1, 1, c(p, q, r))==1)
+        if (step == 1) place <- place + 1
+        if (step == 3) place <- place - 1
+        outcome[i] <- place
+    }
+    return(outcome)
+}
+
+# run function
+steps <- 1000
+p <- 0.3
+q <- 0.3
+r <- 0.4
+results <- walk(p, q, r, steps)
+
+steps2 <- 1000
+p2 <- 0.1
+q2 <- 0.8
+r2 <- 0.1
+results2 <- walk(p2, q2, r2, steps2)
+
+steps3 <- 1000
+p3 <- 0.6
+q3 <- 0.2
+r3 <- 0.2
+results3 <- walk(p3, q3, r3, steps3)
+
+# plot function
+plot(x=1:steps, y=results, type='l', xlab="step number", ylab="cumulative steps", main="Random Walk")
+plot(x=1:steps2, y=results2, type='l', xlab="step number", ylab="cumulative steps", main="Random Walk")
+plot(x=1:steps3, y=results3, type='l', xlab="step number", ylab="cumulative steps", main="Random Walk")
+
+```
+
+
+## PART IV
+
+``` {r}
+
+# Time until next patient arrives
+patient_Arrival <- function() { round(rpois(n=1, lambda=10), 0) }
+# Time spent with each patient
+appointment_Length <- function() { round(runif(n=1, min=5, max=20), 0) }
+# function checks whether a doctor is available
+doc_Availability <- function(x) { return(which(x[1] == 0)) }
+# construct time measure
+calc_Minutes <- function(hours) { return(60 * hours) }
+# intake walk-in patient
+patient_Intake <- function(totalPatients, waitLengths, doctors, waitingRoom) {
+    docsAvailable <- which( lapply(doctors, doc_Availability) == 1 )
+    if (length(docsAvailable) > 0) {
+        doc <- sample(docsAvailable, 1)
+        doctors[[doc]]$patient <- 1
+        doctors[[doc]]$apptlength <- appointment_Length()
+        waitLengths <- c(waitLengths, 0)
+    } else {
+        waitingRoom <- rbind(c('patient', 0), waitingRoom)
+    }
+    totalPatients <- totalPatients + 1
+    nextPatient <- patient_Arrival()
+    return(list(totalPatients = totalPatients, nextPatient = nextPatient,
+                waitLengths = waitLengths, doctors = doctors, waitingRoom = waitingRoom))
+}
+# time moves forward by 1 minute
+time_Change <- function(time, waitLengths, doctors, minutes, waitingRoom) {
+    # Countdown until next patient
+    nextPatient <- nextPatient - time
+    # Countdown for current appointments, reset
+    # doctor if appointment ends
+    for (i in 1:length(doctors)) {
+        if (doctors[[i]]$apptlength != 0) {
+            doctors[[i]]$apptlength <- doctors[[i]]$apptlength - time
+        } else {
+            doctors[[i]]$patient <- 0
+        }
+    }
+   # Assign longest waiter to available doctor
+  docsAvailable <- which( lapply(doctors, doc_Availability) == 1 )
+    for (i in 1:nrow(waitingRoom)){
+    if (length(docsAvailable) > 0 & nrow(waitingRoom) != 0) {
+        doc <- sample(docsAvailable, 1)
+        doctors[[doc]]$patient <- 1
+        doctors[[doc]]$apptlength <- appointment_Length()
+    # Choose the person with the longest wait time.
+    waitNum <- which.max(waitingRoom[, 2])
+    waitLengths <- c(waitLengths, max(as.numeric(waitingRoom[, 2])))
+    waitingRoom <- waitingRoom[-waitNum,]
+        }
+    }
+    # increase wait time by 1 minute for each person in wait room
+    waitingRoom[, 2] <- as.numeric(waitingRoom[, 2]) + time
+    # reduce remaining minutes for accepting new patients
+    minutes <- minutes - time
+    return(list(waitingRoom = waitingRoom, waitLengths = waitLengths,
+                nextPatient = nextPatient, doctors = doctors,
+                minutes = minutes))
+}
+
+# Main Loop
+##############
+# Create doctors
+doctors <- list( list('patient' = 0, 'apptlength' = 0),
+                 list('patient' = 0, 'apptlength' = 0),
+                 list('patient' = 0, 'apptlength' = 0) )
+# Create waiting room
+waitingRoom <- data.frame(matrix(ncol=2, nrow=0))
+colnames(waitingRoom) <- c('waiting_patients', 'wait_time')
+# containers
+totalPatients <- 0
+waitLengths <- c()
+minutes <- calc_Minutes(hours=7)
+nextPatient <- 0
+# main loop
+while (length(which(lapply(doctors, doc_Availability) == 1)) != 3 |
+        nrow(waitingRoom) != 0 | minutes > 0) {{
+    if (nextPatient == 0 & minutes > 0) {
+        intakeInfo <- patient_Intake(totalPatients, waitLengths, doctors, waitingRoom)
+        nextPatient <- intakeInfo$nextPatient
+        totalPatients <- intakeInfo$totalPatients
+        waitLengths <- intakeInfo$waitLengths
+        doctors <- intakeInfo$doctors
+        waitingRoom <- intakeInfo$waitingRoom
+        }
+    timeInfo <- time_Change(time=1, waitLengths, doctors, minutes, waitingRoom)
+    waitLengths <- timeInfo$waitLengths
+    nextPatient <- timeInfo$nextPatient
+    doctors <- timeInfo$doctors
+    minutes <- timeInfo$minutes
+    waitingRoom <- timeInfo$waitingRoom
+}
+results <- c(mean(waitLengths), mean(waitLengths[waitLengths != 0]), sum(waitLengths > 0), totalPatients, abs(minutes))
+}
+results
+
+```
+
+```{r}
+# simulating main loop 1000 times:
+trials <- 100
+results <- data.frame(matrix(nrow=trials, ncol=5))
+colnames(results) <- c('avg_wait', 'avg_wait2', 'count_wait', 'patient_count', 'minutes_past')
+for (j in 1:trials) {
+    doctors <- list( list('patient' = 0, 'apptlength' = 0),
+                     list('patient' = 0, 'apptlength' = 0),
+                     list('patient' = 0, 'apptlength' = 0) )
+    waitingRoom <- data.frame(matrix(ncol=2, nrow=0))
+    colnames(waitingRoom) <- c('waiting_patients', 'wait_time')
+    totalPatients <- 0
+    waitLengths <- c()
+    minutes <- calc_Minutes(hours=7)
+    nextPatient <- 0
+  while (length(which(lapply(doctors, doc_Availability) == 1)) != 3 |
+        nrow(waitingRoom) != 0 | minutes > 0) {
+    if (nextPatient == 0 & minutes > 0) {
+        intakeInfo <- patient_Intake(totalPatients, waitLengths, doctors, waitingRoom)
+        nextPatient <- intakeInfo$nextPatient
+        totalPatients <- intakeInfo$totalPatients
+        waitLengths <- intakeInfo$waitLengths
+        doctors <- intakeInfo$doctors
+        waitingRoom <- intakeInfo$waitingRoom
+        }
+    timeInfo <- time_Change(time=1, waitLengths, doctors, minutes, waitingRoom)
+    waitLengths <- timeInfo$waitLengths
+    nextPatient <- timeInfo$nextPatient
+    doctors <- timeInfo$doctors
+    minutes <- timeInfo$minutes
+    waitingRoom <- timeInfo$waitingRoom
+  }
+results[j,] <- c(mean(waitLengths), mean(waitLengths[waitLengths != 0]), sum(waitLengths > 0), totalPatients, abs(minutes))
+}
+results
+quantile(waitLengths)
+quantile(totalPatients)
+quantile(minutes)
+
+
+```
+
+- If I change the paramters of lambda, I get different waiting times:
+
+```{r}
+# Time until next patient arrives
+patient_Arrival <- function() { round(rpois(n=1, lambda=5), 0) }
+# Time spent with each patient
+appointment_Length <- function() { round(runif(n=1, min=5, max=20), 0) }
+# function checks whether a doctor is available
+doc_Availability <- function(x) { return(which(x[1] == 0)) }
+# construct time measure
+calc_Minutes <- function(hours) { return(60 * hours) }
+# intake walk-in patient
+patient_Intake <- function(totalPatients, waitLengths, doctors, waitingRoom) {
+    docsAvailable <- which( lapply(doctors, doc_Availability) == 1 )
+    if (length(docsAvailable) > 0) {
+        doc <- sample(docsAvailable, 1)
+        doctors[[doc]]$patient <- 1
+        doctors[[doc]]$apptlength <- appointment_Length()
+        waitLengths <- c(waitLengths, 0)
+    } else {
+        waitingRoom <- rbind(c('patient', 0), waitingRoom)
+    }
+    totalPatients <- totalPatients + 1
+    nextPatient <- patient_Arrival()
+    return(list(totalPatients = totalPatients, nextPatient = nextPatient,
+                waitLengths = waitLengths, doctors = doctors, waitingRoom = waitingRoom))
+}
+# time moves forward by 1 minute
+time_Change <- function(time, waitLengths, doctors, minutes, waitingRoom) {
+    # Countdown until next patient
+    nextPatient <- nextPatient - time
+    # Countdown for current appointments, reset
+    # doctor if appointment ends
+    for (i in 1:length(doctors)) {
+        if (doctors[[i]]$apptlength != 0) {
+            doctors[[i]]$apptlength <- doctors[[i]]$apptlength - time
+        } else {
+            doctors[[i]]$patient <- 0
+        }
+    }
+   # Assign longest waiter to available doctor
+  docsAvailable <- which( lapply(doctors, doc_Availability) == 1 )
+    for (i in 1:nrow(waitingRoom)){
+    if (length(docsAvailable) > 0 & nrow(waitingRoom) != 0) {
+        doc <- sample(docsAvailable, 1)
+        doctors[[doc]]$patient <- 1
+        doctors[[doc]]$apptlength <- appointment_Length()
+    # Choose the person with the longest wait time.
+    waitNum <- which.max(waitingRoom[, 2])
+    waitLengths <- c(waitLengths, max(as.numeric(waitingRoom[, 2])))
+    waitingRoom <- waitingRoom[-waitNum,]
+        }
+    }
+    # increase wait time by 1 minute for each person in wait room
+    waitingRoom[, 2] <- as.numeric(waitingRoom[, 2]) + time
+    # reduce remaining minutes for accepting new patients
+    minutes <- minutes - time
+    return(list(waitingRoom = waitingRoom, waitLengths = waitLengths,
+                nextPatient = nextPatient, doctors = doctors,
+                minutes = minutes))
+}
+# Main Loop
+##############
+# Create doctors
+doctors <- list( list('patient' = 0, 'apptlength' = 0),
+                 list('patient' = 0, 'apptlength' = 0),
+                 list('patient' = 0, 'apptlength' = 0) )
+# Create waiting room
+waitingRoom <- data.frame(matrix(ncol=2, nrow=0))
+colnames(waitingRoom) <- c('waiting_patients', 'wait_time')
+# containers
+totalPatients <- 0
+waitLengths <- c()
+minutes <- calc_Minutes(hours=7)
+nextPatient <- 0
+# main loop
+while (length(which(lapply(doctors, doc_Availability) == 1)) != 3 |
+        nrow(waitingRoom) != 0 | minutes > 0) {{
+    if (nextPatient == 0 & minutes > 0) {
+        intakeInfo <- patient_Intake(totalPatients, waitLengths, doctors, waitingRoom)
+        nextPatient <- intakeInfo$nextPatient
+        totalPatients <- intakeInfo$totalPatients
+        waitLengths <- intakeInfo$waitLengths
+        doctors <- intakeInfo$doctors
+        waitingRoom <- intakeInfo$waitingRoom
+        }
+    timeInfo <- time_Change(time=1, waitLengths, doctors, minutes, waitingRoom)
+    waitLengths <- timeInfo$waitLengths
+    nextPatient <- timeInfo$nextPatient
+    doctors <- timeInfo$doctors
+    minutes <- timeInfo$minutes
+    waitingRoom <- timeInfo$waitingRoom
+}
+results <- c(mean(waitLengths), mean(waitLengths[waitLengths != 0]), sum(waitLengths > 0), totalPatients, abs(minutes))
+}
+results
+
+
+```
+
+```{r}
+
+# simulating main loop 100 times for lamba =5
+trials <- 100
+results <- data.frame(matrix(nrow=trials, ncol=5))
+colnames(results) <- c('avg_wait', 'avg_wait2', 'count_wait', 'patient_count', 'minutes_past')
+for (j in 1:trials) {
+    doctors <- list( list('patient' = 0, 'apptlength' = 0),
+                     list('patient' = 0, 'apptlength' = 0),
+                     list('patient' = 0, 'apptlength' = 0) )
+    waitingRoom <- data.frame(matrix(ncol=2, nrow=0))
+    colnames(waitingRoom) <- c('waiting_patients', 'wait_time')
+    totalPatients <- 0
+    waitLengths <- c()
+    minutes <- calc_Minutes(hours=7)
+    nextPatient <- 0
+  while (length(which(lapply(doctors, doc_Availability) == 1)) != 3 |
+        nrow(waitingRoom) != 0 | minutes > 0) {
+    if (nextPatient == 0 & minutes > 0) {
+        intakeInfo <- patient_Intake(totalPatients, waitLengths, doctors, waitingRoom)
+        nextPatient <- intakeInfo$nextPatient
+        totalPatients <- intakeInfo$totalPatients
+        waitLengths <- intakeInfo$waitLengths
+        doctors <- intakeInfo$doctors
+        waitingRoom <- intakeInfo$waitingRoom
+        }
+    timeInfo <- time_Change(time=1, waitLengths, doctors, minutes, waitingRoom)
+    waitLengths <- timeInfo$waitLengths
+    nextPatient <- timeInfo$nextPatient
+    doctors <- timeInfo$doctors
+    minutes <- timeInfo$minutes
+    waitingRoom <- timeInfo$waitingRoom
+  }
+results[j,] <- c(mean(waitLengths), mean(waitLengths[waitLengths != 0]), sum(waitLengths > 0), totalPatients, abs(minutes))
+}
+results
+quantile(waitLengths)
+quantile(totalPatients)
+quantile(minutes)
+```
