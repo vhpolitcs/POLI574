@@ -190,6 +190,7 @@ mcmc <- function(p, states, burnin, runs) {
 }
 
 # Create transition matrix
+
 a_1 <- 0.75
 a_2 <- 0.25
 b_1 <- 0.125
@@ -197,9 +198,45 @@ b_2 <- 0.875
 p <- matrix(data=c(a_1, a_2, b_1, b_2), nrow=2, byrow=TRUE)
 
 # specify number of states. (note that this code will only work for 2)
+
 states <- c(1,2)
 
-# run algorithm
-results <- mcmc(p, states, burnin=100, runs=1000)
+# run algorithm 
+runs <- seq(1, 2000)
+pct_results <- rep(NA, length(runs))
+for (i in runs){
+    results <- mcmc(p, states, burnin=100, runs=i)
+    pct_results[i] <- sum(results[results==1]) / i 
+}
+
+sequence <- seq(5, 2000, 5) 
+plot(x=runs[sequence], y=pct_results[sequence], type="l", xlab="runs",
+ylab="cumulative mean", main="Convergence of the Markov Chain to the Invariant Distribution")
 ```
 
+```{r}
+# random walk function
+walk <- function(p, q, r, steps){
+    outcome <- rep(NA, steps)
+    place <- 0
+    for (i in 1:steps){
+        step <- which(rmultinom(1, 1, c(p, q, r))==1)
+        if (step == 1) place <- place + 1
+        if (step == 3) place <- place - 1
+        outcome[i] <- place
+    }
+    return(outcome)
+}
+
+# run function
+steps <- 1000
+p <- 0.4
+q <- 0.3
+r <- 0.3
+results <- walk(p, q, r, steps)
+
+# plot function
+plot(x=1:steps, y=results, type='l', xlab="step number",
+     ylab="cumulative steps", main="Random Walk")
+
+```
