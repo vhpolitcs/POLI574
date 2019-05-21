@@ -15,7 +15,7 @@ Hospital visit simulation:
 ################
 
 # Time until next patient arrives
-patient_Arrival <- function() { round(rpois(n=1, lambda=10), 0) }
+patient_Arrival <- function() { round(rpois(n=1, lambda=5), 0) }
 
 # Time spent with each patient
 appointment_Length <- function() { round(runif(n=1, min=5, max=20), 0) }
@@ -58,14 +58,16 @@ time_Change <- function(time, waitLengths, doctors, minutes, waitingRoom) {
     }
     # Assign longest waiter to available doctor
     docsAvailable <- which( lapply(doctors, doc_Availability) == 1 )
-    if (length(docsAvailable) > 0 & nrow(waitingRoom) != 0) {
-        doc <- sample(docsAvailable, 1)
-        doctors[[doc]]$patient <- 1
-        doctors[[doc]]$apptlength <- appointment_Length()
-        # Choose the person with the longest wait time.
-        waitNum <- which.max(waitingRoom[, 2])
-        waitLengths <- c(waitLengths, max(as.numeric(waitingRoom[, 2])))
-        waitingRoom <- waitingRoom[-waitNum,]
+    for (i in 1:nrow(waitingRoom)){
+        if (length(docsAvailable) > 0 & nrow(waitingRoom) != 0) {
+            doc <- sample(docsAvailable, 1)
+            doctors[[doc]]$patient <- 1
+            doctors[[doc]]$apptlength <- appointment_Length()
+            # Choose the person with the longest wait time.
+            waitNum <- which.max(waitingRoom[, 2])
+            waitLengths <- c(waitLengths, max(as.numeric(waitingRoom[, 2])))
+            waitingRoom <- waitingRoom[-waitNum,]
+        }
     }
     # increase wait time by 1 minute for each person in wait room
     waitingRoom[, 2] <- as.numeric(waitingRoom[, 2]) + time
@@ -145,7 +147,7 @@ for (j in 1:trials) {
     minutes <- timeInfo$minutes
     waitingRoom <- timeInfo$waitingRoom
   }
-results[j,] <- c(mean(waitLengths), sum(waitLengths > 0), totalPatients, abs(minutes))
+results[j,] <- c(mean(waitLengths[waitLengths!=0]), sum(waitLengths > 0), totalPatients, abs(minutes))
 }
 ```
 
