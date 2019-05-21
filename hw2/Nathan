@@ -1,0 +1,136 @@
+---
+title: "HW2"
+author: "Nathan"
+date: "14 May 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##PART II 
+
+```{r}
+#3.1
+Post1<- rbeta(100000, shape1=21, shape2=91)
+plot(density(Post1), main="Distribution of Beta(21,91)", xlab="Theta 1", ylab="Probability Density", xlim=c(0,0.5))
+
+Post2<- rbeta(100000, shape1=192, shape2=820)
+plot(density(Post2), main="Distribution of Beta(192,820)", xlab="Theta 1", ylab="Probability Density", xlim=c(0,0.5))
+
+
+```
+
+
+```{r}
+#3.8 Calculations
+a1=c(0.9,0.8,0.7,0.6,0.5)
+a2=c(0.1,0.2,0.3,0.4,0.5)
+m1=100
+m2=200
+
+LBF1=log10(
+  ((gamma(11)/((m1*2)+1)^11))/
+  (((gamma((a1*10)+1)/((m1+1)^(a1*10+1))))*
+    ((gamma((a2*10)+1)/((m1+1)^(a2*10+1))))))
+
+LBF2=log10((gamma(21)/((m2*2)+1)^21)/
+  (((gamma((a1*20)+1)/((m2+1)^(a1*20+1))))*
+    ((gamma((a2*20)+1)/((m2+1)^(a2*20+1))))))
+
+LBF1
+LBF2
+
+Table_1<-data.frame(a1,a2,LBF1, LBF2)
+Table_1
+
+
+```
+
+```{r}
+#6.1 (e)
+P_data<-c(1/3, 2/3, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0,
+          1/4, 0, 0, 1/4, 1/2, 0,
+          0, 0, 0, 1/8, 7/8, 0,
+          0, 0, 0, 0, 0, 1,
+          0, 0, 0, 0, 1, 0)
+
+P<-matrix(P_data, nrow=6, ncol=6, byrow=T)
+P_sim<-Reduce('%*%', rep(list(P), 101), accumulate=TRUE)
+P100<-P_sim[100]
+P101<-P_sim[101]
+
+P100
+P101
+
+#From the 2 matrices, we see that there is no convergence towards invariance as expected since in (c) and (d) we concluded that the process is not irreducible. Most of the probabilties get extremely small over 100 or so iterations (except for that relating to states 5 and 6, since the probability of remaining and switching between 5 and 6 is basically 1 once this is reached from the other states) and we see there is no convergence even from the 100th to 101st iteration with probabilities changing and switching places across the different rows and columns.  
+```
+```{r}
+#6.3 (a)
+data=c(0.750, 0.25, 0.125, 0.875)
+P1=matrix(data, ncol=2, nrow=2, byrow=T)
+P1%*%P1
+
+#The matrix pertains to the probability of being in that state in 2 iterations. For example, 0.76875 is the probability that it will be in state 2 if the initial state was 2. 
+
+```
+```{r}
+#6.3(b)
+
+Markov<-function(Actual=500,Burn.In=500){
+Iters <- Actual + Burn.In
+results <- rep(NA, Iters)
+
+#Assume initial state as 1 and take state 1 as "1" and state 2 as "0" for easy counting
+P<-runif(1)
+if (P>0.25) results[1]<-1
+if (P<=0.25) results[1]<-0
+
+for (i in 2:Iters){
+P1<-runif(1)
+if (results[(i-1)]==1 & P1>0.25) results[i]<-1
+if (results[(i-1)]==1 & P1<=0.25) results[i]<-0
+if (results[(i-1)]==0 & P1>0.125) results[i]<-0
+if (results[(i-1)]==0 & P1<=0.125) results[i]<-1}
+
+return(results[Burn.In+1:Iters]) 
+}
+ 
+
+BIs<-seq(10,10000,10)
+Theta_1<-rep(NA,length(BIs))
+
+for(k in 1:length(BIs)){
+      Ones=table(Markov(Actual=BIs[k],Burn.In = BIs[k]))
+Theta_1[k]<-Ones[2]/BIs[k]}
+Theta_1
+plot(BIs,Theta_1)
+
+#The larger the number of burn-in and total iterations, the more the the value proportions approximate the invariant distributions'.  
+
+```
+
+```{r}
+#6.4
+
+#Y_(t) = Y_(t-1) + 1 (with prob = p) or Y_(t-1) - 1 (with prob = q) or Y_(t-1) (with prob = r).
+Random_Walk<-function(p=0.3, q=0.3, r=0.4, steps=500){
+results=rep(NA, steps)
+  for (i in 2:steps){
+  rand<-runif(1)
+  results[1]<-0
+  if (rand <=p)              results[i]<- results[i-1]+1 
+  if (rand >p & rand <=q+p)    results[i]<- results[i-1]-1
+  if (rand >(1-r))           results[i]<- results[i-1]}
+return(results)}
+plot(Random_Walk(0.4,0.4,0.2, 5000))
+plot(Random_Walk(0.1,0.1,0.8, 5000))
+plot(Random_Walk(0.5,0.2,0.3, 5000))
+plot(Random_Walk(0.2,0.5,0.3, 5000))
+
+#Comparing the results, we see that when p>q, the process trends upwards. When q>p, the process trends downwards, and when p=q, the process could trend either way (under this condition, if r is relatively large compared to p and q, the range of the walk is more limited compared to when r is small).
+
+```
+
