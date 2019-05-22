@@ -2,14 +2,14 @@
 title: "HW2"
 author: "Nathan"
 date: "14 May 2019"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##PART II 
+#PART II 
 
 ```{r}
 #3.1
@@ -47,7 +47,7 @@ Table_1
 
 
 ```
-
+##Part III
 ```{r}
 #6.1 (e)
 P_data<-c(1/3, 2/3, 0, 0, 0, 0,
@@ -79,6 +79,7 @@ P1%*%P1
 ```{r}
 #6.3(b)
 
+
 Markov<-function(Actual=500,Burn.In=500){
 Iters <- Actual + Burn.In
 results <- rep(NA, Iters)
@@ -105,7 +106,6 @@ Theta_1<-rep(NA,length(BIs))
 for(k in 1:length(BIs)){
       Ones=table(Markov(Actual=BIs[k],Burn.In = BIs[k]))
 Theta_1[k]<-Ones[2]/BIs[k]}
-Theta_1
 plot(BIs,Theta_1)
 
 #The larger the number of burn-in and total iterations, the more the the value proportions approximate the invariant distributions'.  
@@ -116,6 +116,7 @@ plot(BIs,Theta_1)
 #6.4
 
 #Y_(t) = Y_(t-1) + 1 (with prob = p) or Y_(t-1) - 1 (with prob = q) or Y_(t-1) (with prob = r).
+
 Random_Walk<-function(p=0.3, q=0.3, r=0.4, steps=500){
 results=rep(NA, steps)
   for (i in 2:steps){
@@ -131,6 +132,114 @@ plot(Random_Walk(0.5,0.2,0.3, 5000))
 plot(Random_Walk(0.2,0.5,0.3, 5000))
 
 #Comparing the results, we see that when p>q, the process trends upwards. When q>p, the process trends downwards, and when p=q, the process could trend either way (under this condition, if r is relatively large compared to p and q, the range of the walk is more limited compared to when r is small).
+
+```
+##Part IV
+
+```{r}
+
+##Part (1) - Preparing the Simulation
+
+Sim<-function(Rate=10){
+
+#Determining Arrival Times and Number of Arrivals
+Arrival_time=rep(NA, 100)
+Arrival_time[1]<-0
+Arrival_time[2]<-Arrival_time[1]+rpois(1,Rate)
+Arrival_time[3]<-Arrival_time[2]+rpois(1,Rate)
+
+for(i in 4:100){
+  Arrival_time[i]<-Arrival_time[i-1]+rpois(1,Rate)
+ }
+Arrival_Number<-sum(Arrival_time<420)
+
+#Set up conditions
+Seen_time=rep(NA,Arrival_Number)
+Wait_time=rep(NA,Arrival_Number)
+Seen_time[1]<-Arrival_time[1]
+Seen_time[2]<-Arrival_time[2]
+Seen_time[3]<-Arrival_time[3]
+
+#Determining Consult Times and What Time They Are Seen
+for (k in 4:Arrival_Number){
+ Consult_time<-runif(Arrival_Number, min=5, max=20)
+  if (Seen_time[k-1] + Consult_time[k-1]< Arrival_time[k] |
+      Seen_time[k-2]+ Consult_time[k-2] < Arrival_time[k] |
+      Seen_time[k-3]+ Consult_time[k-3]< Arrival_time[k])  
+      Seen_time[k]<- Arrival_time[k]
+  
+  else Seen_time[k]<-min(Seen_time[k-1]+Consult_time[k-1], 
+                      Seen_time[k-2]+Consult_time[k-2],
+                      Seen_time[k-3]+Consult_time[k-3])
+  
+  Wait_time[k]<-Seen_time[k]-Arrival_time[k]
+}
+
+#Number of Patients + Number of people who waited + Average Wait + Closing Time
+
+
+Results <-c(Arrival_Number, 
+            sum(Wait_time>0, na.rm=T), 
+            mean(Wait_time, na.rm=T), 
+            Seen_time[Arrival_Number]+Consult_time[Arrival_Number])
+
+return(Results)}
+
+```
+
+```{r}
+#Running once:
+Sim(Rate=10)
+```
+
+```{r}
+#Part (2) - Running 100 times
+
+n=100
+Estimates=matrix(NA,nrow=n, ncol=4)
+for(i in 1:n){
+  Estimates[i,1:4]=Sim(Rate=10)[1:4]
+}
+```
+
+```{r}
+#Median and 50% Intervals for Total Number of Patients 
+median(Estimates[,1])
+quantile(Estimates[,1], probs=c(0.25,0.75))
+plot(density(Estimates[,1]), main="Total Number of Patients", xlab="No. of patients", ylab="Frequency")
+abline(v=median(Estimates[,1]), col="blue")
+abline(v=(quantile(Estimates[,1], probs=c(0.25,0.75))[1]), col="red",lty=2 )
+abline(v=(quantile(Estimates[,1], probs=c(0.25,0.75))[2]), col="red", lty=2)
+```
+
+```{r}
+#Median and 50% Intervals for Number of People Who Waited 
+median(Estimates[,2])
+quantile(Estimates[,2], probs=c(0.25,0.75))
+plot(density(Estimates[,2]), main="Total Number of Patients Who Waited", xlab="No. of patients", ylab="Frequency")
+abline(v=median(Estimates[,2]), col="blue")
+abline(v=(quantile(Estimates[,2], probs=c(0.25,0.75))[1]), col="red",lty=2 )
+abline(v=(quantile(Estimates[,2], probs=c(0.25,0.75))[2]), col="red", lty=2)
+```
+
+```{r}
+#Median and 50% Intervals for Average Wait Time
+median(Estimates[,3])
+quantile(Estimates[,3], probs=c(0.25,0.75))
+plot(density(Estimates[,3]), main="Average Waiting Time", xlab="Time (Min)", ylab="Density")
+abline(v=median(Estimates[,3]), col="blue")
+abline(v=(quantile(Estimates[,3], probs=c(0.25,0.75))[1]), col="red",lty=2 )
+abline(v=(quantile(Estimates[,3], probs=c(0.25,0.75))[2]), col="red", lty=2)
+```
+
+```{r}
+#Median and 50% Intervals for Closing Time
+median(Estimates[,4])
+quantile(Estimates[,4], probs=c(0.25,0.75))
+plot(density(Estimates[,4]), main="Closing Time", xlab="Time (Min after 0900)", ylab="Density")
+abline(v=median(Estimates[,4]), col="blue")
+abline(v=(quantile(Estimates[,4], probs=c(0.25,0.75))[1]), col="red",lty=2 )
+abline(v=(quantile(Estimates[,4], probs=c(0.25,0.75))[2]), col="red", lty=2)
 
 ```
 
