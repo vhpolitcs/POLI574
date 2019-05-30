@@ -1,0 +1,428 @@
+---
+title: "POLI574 Midterm"
+author: "Veronica Hurtado"
+date: "5/26/2019"
+output: html_document
+---
+
+# PART I
+
+a)
+
+To check that $\alpha = 1.00, \beta = 0.67$, observe the following draws from the beta distribution:
+
+```{r}
+prior <- rbeta(10000, 1, .67)
+prior.mean <- mean(prior)
+sqrt(var(prior))
+
+plot(density(prior), type="l", col="black", main="Density plot for prior distribution")
+```
+
+b)
+
+The mean and variance of the posterior distribution can be determined by Monte Carlo simulation:
+
+```{r}
+posterior <- rbeta(10000, 651, 350.67)
+
+mean.posterior <- mean(rbeta(10000, 651, 350.67))
+mean.posterior
+
+var.posterior <- var(rbeta(10000, 651, 350.67))
+var.posterior
+
+CIposterior <- quantile(posterior, probs=c(0.1, 0.9))
+CIposterior
+
+plot(density(posterior), main="Density of the posterior distribution with credibility intervals")
+abline(v=c(mean.posterior, CIposterior), lty=c(1, 2, 2))
+
+```
+
+# PART II
+
+Seeting up the parameters:
+
+```{r}
+a3 <- 295
+b3 <- 308
+posterior2 <- rbeta(601, shape1=a3, shape2=b3)
+
+a4 <- 289
+b4 <- 333
+posterior3 <- rbeta(620, shape1=a4, shape2=b4)
+
+difference <- posterior3 - posterior2
+CIdifference <- quantile(difference, probs=c(0.025, 0.975))
+```
+
+Creating the histogram:
+
+```{r}
+hist(difference, main = "Histogram of the Posterior Density", xlab = "Difference", ylab = "Density", freq = FALSE)
+abline(v=c(mean(difference), CIdifference), col="red", lty=c(1, 2, 2))
+```
+
+The probability that there was a shifr toward Clinton is:
+
+```{r}
+clinton <- sum(difference>0) / length(difference>0) 
+clinton
+```
+
+# PART III
+
+I start setting up the functions:
+
+```{r}
+# sample h function
+draw.h <- function(y, n, alpha, delta, mu, g) {
+    alpha[g] <- alpha[1] + n
+    delta[g] <- delta[1] + sum((y - mu[g - 1])^2)
+    h <- rgamma(1, alpha[g] / 2, delta[g] / 2)
+    return(h)
+}
+
+# sample mu function
+draw.mu <- function(y, n, h, mu, g) {
+    arg1 <- (h[1] * mu[1] + h[g - 2] * n * mean(y)) /
+            (h[1] + h[g - 2] * n)
+    arg2 <- 1 / (h[1] + h[g - 2] * n)
+    return(rnorm(1, arg1, arg2))
+}
+
+# gibbs sampler function
+gibbs_sampler <- function(y, n, h, alpha, delta, mu, iter, burnin) {
+  
+    # first iteration
+    h[1] <- draw.h(y, n, alpha, delta, mu, g=2)
+    
+    # all other iterations
+    for (g in 3:iter) {
+        mu[g - 1] <- draw.mu(y, n, h, mu, g)
+        h[g - 1] <- draw.h(y, n, alpha, delta, mu, g)
+    }
+    
+    # discard early iterations
+    mu <- mu[-(1:burnin)]
+    h <- h[-(1:burnin)]
+      
+    return(list(mu=mu, h=h))
+}
+
+```
+
+I implement the data into the functions:
+
+```{r}
+# read data
+birthDat <- read.table("/Users/veronica/Dropbox/UBC/3/3 - summer/POLI 574/POLI 574/Replication 2/dataverse_files/babiesI.data", header=TRUE)
+
+# parameters
+y <- birthDat$bwt
+n <- length(y)
+iter <- 1000
+burnin <- 500
+
+# containers
+mu <- rep(NA, iter)
+h <- rep(NA, iter)
+alpha <- rep(NA, iter)
+delta <- rep(NA, iter)
+
+#  starting values
+mu[1] <- 25
+alpha[1] <- 1
+delta[1] <- 1
+
+outcome <- gibbs_sampler(y, n, h, alpha, delta, mu, iter, burnin)
+ci.mu <- quantile(na.omit(outcome$mu), probs=c(0.025, 0.975))
+ci.h <- quantile(na.omit(outcome$h), probs=c(0.025, 0.975))
+```
+
+I generate the histogram of the posterior distribution: 
+
+```{r}
+hist(x=na.omit(outcome$mu), breaks = 50, xlab="Mu Draws", 
+     main="Histogram of Posterior Distribution of Mu", freq = F)
+abline(v=c(mean(na.omit(outcome$mu)), ci.mu), col="red", lty=c(1, 2, 2))
+
+hist(x=na.omit(outcome$h), breaks = 50, xlab="h Draws", 
+     main="Histogram of Posterior Distribution of h", freq = F)
+abline(v=c(mean(na.omit(outcome$h)), ci.h), col="blue", lty=c(1, 2, 2))
+```
+
+```{r}
+
+mu_posterior <- na.omit(outcome$mu)
+mean_nse <- sum((mu_posterior - mean(mu_posterior))^2)/(length(mu_posterior -1))
+mean_nse
+
+h_posterior <- na.omit(outcome$h)
+h_nse <- sum((h_posterior - mean(h_posterior))^2)/(length(mu_posterior -1))
+h_nse                    
+                    
+```
+
+# PART IV
+
+Here is the code for the replication project:
+
+```{r}
+rm(list=ls()) # clear all objects in memory
+dev.off()     # reload graphic device
+
+if (!require("pacman")) install.packages("pacman")  # load packages
+pacman::p_load(
+  arm, 
+  foreign, 
+  car, 
+  sandwich, 
+  lmtest, 
+  dplyr, 
+  plyr, 
+  magrittr, 
+  ggplot2,
+  plotly,
+  gridExtra,
+  maptools, 
+  spdep, 
+  spgwr, 
+  rgdal, 
+  sp,
+  Matrix,
+  RColorBrewer,
+  xtable,
+  stargazer,
+  classInt)
+
+cat("\014")  # clear console
+
+
+###################################################
+#### Section 1: Load data and recode variables ####
+###################################################
+
+avr = 
+read.csv("LEVdbase.csv",
+  header=TRUE, 
+  stringsAsFactors=TRUE, 
+  na.strings = ".") %>%  
+    as.data.frame()
+
+dplyr::glimpse(avr) # look at the data
+
+avr[is.na(avr)] = 0 # convert NAs o 0s
+
+recoded = group_by(avr, no) %>% # subset data and recode
+  summarise(
+    # ids
+    #no = no,
+    # Soybean harvest per season
+    soy_hvst_2015 = log(soja_cosecha_1415+1), # 2014/2015
+    soy_hvst_2013 = log(soja_cosecha_1213+1), # 2012/2013
+    soy_hvst_2011 = log(soja_cosecha_1011+1), # 2010/2011
+    soy_hvst_2009 = log(soja_cosecha_0809+1), # 2008/2009
+    soy_hvst_2007 = log(soja_cosecha_0607+1), # 2006/2007
+    # Alternative explanations 
+    lockouts_ln = log(lockouts_n+1), # 2008 farm lockouts
+    k_intense = mq_sembradoras_eap / eap, # seed drills
+    eap_small = (eap_hasta5_has + eap_5_10_has + eap_10_25_has) / eap_has, # family farms (small EAPs, < 25 ha)
+    # Controls
+    eap_ln = log(eap+1),
+    education_01 = (educ_college_01 + educ_college_inc_01 + educ_mschool_01) / population15_01, # education 2001
+    education_10 = (educ_college_10 + educ_college_inc_10 + educ_mschool_10) / population15_10, # education 2010
+    poverty_01 = nbi_01 / population_01, # poverty 2001
+    poverty_10 = nbi_10 / (nbi_10 + sin_nbi_10), # poverty 2010
+    rural_01 = population_rural_01 / population_01, # rural population 2001
+    rural_10 = hh_rural_10 / hh_10, # rural population 2010 
+    popdens_01 = log(population15_01 / area), # population density 2001
+    popdens_10 = log(population15_10 / area) # population density 2010
+  )
+
+is.nan.data.frame <- function(x) do.call(cbind, lapply(x, is.nan)) # for the NaNs
+recoded[is.nan(recoded)] <- 0
+
+recoded <- do.call(data.frame, lapply(recoded, function(x) replace(x, is.infinite(x), 0))) # for the Infs
+
+avr <- merge(avr, recoded, by='no') # merge
+remove(recoded)
+
+
+##############################################################
+#### Section 2: Create spatial object and merge with data ####
+##############################################################
+
+options(warn=-1) 
+avr_shp <- readOGR(    
+  dsn=path.expand("/Users/veronica/Dropbox/UBC/3/3 - summer/POLI 574/POLI 574/Replication 2/dataverse_files"), 
+   layer="LEVspatial") 
+
+plot(avr_shp) 
+
+avr_shp@data <-
+  data.frame(avr_shp@data, 
+             avr[match(avr_shp@data[,"ID_2"], 
+                       avr[,"id_d"]),]) 
+
+names(avr_shp) 
+
+writeOGR(avr_shp, 
+         layer="avr_shp", 
+         dsn=path.expand("/Users/veronica/Dropbox/UBC/3/3 - summer/POLI 574/POLI 574/Replication 2/dataverse_files"), # type the full directory in dsn
+         driver="ESRI Shapefile", 
+         overwrite_layer=TRUE)
+
+avr_shp <- avr_shp[!is.na(avr_shp@data$pro_pres1_2015) ,] # remove 4 departments w/ NAs in electoral outcomes
+
+neighbors <- poly2nb(avr_shp, queen=TRUE) # create neighbor list (simple contiguity queen matrix)
+
+wtm <- nb2listw(neighbors, zero.policy=TRUE) # set up queen matrix of spatial weights 
+
+
+
+############################################
+#### Section 3: Run spatial diagnostics ####
+############################################
+
+# Test spatial autocorrelation (Cambiemos 2015 as an illustration)
+resid_pro = residuals(with(avr_shp@data, # get residuals from OLS lm
+                           (pro_pres1_2015 ~ soy_kgha_2015)))
+
+print(moran.mc( # permutation inference 
+  avr_shp@data$pro_pres1_2015, wtm, zero.policy=TRUE, nsim=999))
+
+# OLS spatial diagnostics: Lagrange multiplier
+LMlag <- with(avr_shp@data, lm(pro_pres1_2015 ~ soy_hvst_2015 + # LM lag
+                                 education_10 + poverty_10 + eap_ln + rural_10)) %>%
+  lm.LMtests(wtm, zero.policy=TRUE, 
+             test="LMlag") %>%
+  print()
+LMerr <- with(avr_shp@data, lm(pro_pres1_2015 ~ soy_hvst_2015 + # LM err
+                                 education_10 + poverty_10 + eap_ln + rural_10)) %>%
+  lm.LMtests(wtm, zero.policy=TRUE,
+             test="LMerr") %>%
+  print()
+
+
+### Section 4: Spatial error models ----
+
+## Table 1: Legislative vote and local wealth in Argentina, 2007-2009
+t1m1 = errorsarlm(fpv_dip_2007 ~ soy_hvst_2007 + fpv_dip_2005 + education_01 + poverty_01 + popdens_01 + eap_ln + rural_01 + popdens_01, 
+                  wtm, data=avr_shp@data, zero.policy=TRUE)
+t1m2 = errorsarlm(fpv_dip_2007 ~ soy_hvst_2007 + k_intense + eap_small + fpv_dip_2005 + education_01 + poverty_01 + eap_ln + rural_01 + popdens_01, 
+                  wtm, data=avr_shp@data, zero.policy=TRUE)
+t1m3 = errorsarlm(fpv_dip_2009 ~ soy_hvst_2009 + fpv_dip_2007 + education_01 + poverty_01 + eap_ln + rural_01 + popdens_01, 
+                  wtm, data=avr_shp@data, zero.policy=TRUE)
+t1m4 = errorsarlm(fpv_dip_2009 ~ soy_hvst_2009 + k_intense + eap_small + lockouts_ln + fpv_dip_2007 + education_01 + poverty_01 + eap_ln + rural_01 + popdens_01, 
+                  wtm, data=avr_shp@data, zero.policy=TRUE)
+
+stargazer(t1m1, t1m2, t1m3, t1m4,
+          title="Legislative vote and local wealth in Argentina, 2007-2009",
+          #se = list(c(rse_t1m1, rse_t1m2, rse_t1m3, rse_t1m4)),
+          covariate.labels=c("Soybean harvest 2007 (ln)", "Soybean harvest 2009 (ln)",  "Lockouts 2008 (ln)", 
+                             "Agricultural capital ", "Smallholding farms", "FPV vote share 2007", "FPV vote share 2005", 
+                             "Education", "Poverty", "Farms (ln)", "Rural population", "Population density (ln)"),
+          #add.lines=list(c("Fixed effects", "YES", "YES", "YES", "YES")),
+          column.sep.width="2pt",
+          dep.var.labels=c("FPV 2007", "FPV 2009"),
+          dep.var.labels.include=TRUE,
+          digits=3,
+          float=TRUE,
+          #float.env="sidewaystable",
+          no.space=TRUE,
+          omit="province",
+          omit.stat="f",
+          order=c(1, 6, 5, 2, 3, 4, 7, 8, 9, 10, 11, 12),
+          out="Table1.html",
+          single.row=FALSE,
+          star.cutoffs = c(0.10, 0.05, 0.01),
+          table.placement="h!",
+          type="html"
+)
+
+
+## Table 2: Legislative and local wealth in Argentina, 2011-2015
+t2m1 <- errorsarlm(fpv_dip_2011 ~ soy_hvst_2011 + fpv_dip_2009 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t2m2 <- errorsarlm(fpv_dip_2011 ~ soy_hvst_2011 + k_intense + eap_small + lockouts_ln + fpv_dip_2009 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t2m3 <- errorsarlm(fpv_dip_2013 ~ soy_hvst_2013 + fpv_dip_2011 +  education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t2m4 <- errorsarlm(fpv_dip_2013 ~ soy_hvst_2013 + k_intense + eap_small + lockouts_ln + fpv_dip_2011 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t2m5 <- errorsarlm(fpv_dip_2015 ~ soy_hvst_2015 + fpv_dip_2013 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t2m6 <- errorsarlm(fpv_dip_2015 ~ soy_hvst_2015 + k_intense + eap_small + lockouts_ln + fpv_dip_2013 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+
+stargazer(t2m1, t2m2, t2m3, t2m4, t2m5, t2m6, 
+          title="Legislative vote and local wealth in Argentina, 2011-2015",
+          #se = list(c(rse_t2m1, rse_t2m2, rse_t2m3, rse_t2m4, rse_t2m5, rse_t2m6)),
+          covariate.labels=c("Soybean harvest 2011 (ln)", "Soybean harvest 2013 (ln)", "Soybean harvest 2015 (ln)", 
+                             "Lockouts 2008 (ln)", "Agricultural capital ", "Smallholding farms", "FPV vote share 2009", 
+                             "FPV vote share 2011", "FPV vote share 2013", "Education", "Poverty", 
+                             "Farms (ln)", "Rural population", "Population density (ln)"),
+          #add.lines=list(c("Fixed effects", "YES", "YES", "YES", "YES", "YES", "YES")),
+          column.sep.width="-5pt",
+          dep.var.labels=c("FPV 2011", "FPV 2013", "FPV 2015"),
+          dep.var.labels.include=TRUE,
+          digits=3,
+          float=TRUE,
+          #float.env="sidewaystable",
+          font.size="small",
+          no.space=TRUE,
+          omit="province",
+          omit.stat="f",
+          out="Table2.html",
+          order=c(1, 6, 8, 4, 2, 3, 5, 7, 9, 10, 11, 12, 13, 14),
+          single.row=FALSE,
+          star.cutoffs = c(0.10, 0.05, 0.01),
+          table.placement="h!",
+          type="html"
+)
+
+
+## Table 3: Presidential vote and local wealth Argentina, 2011-2015
+t3m1 <- errorsarlm(fpv_pres_2011 ~ soy_hvst_2011 + fpv_pres_2007 +  education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t3m2 <- errorsarlm(fpv_pres_2011 ~ soy_hvst_2011 + fpv_pres_2007 + k_intense + eap_small + lockouts_ln + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t3m3 <- errorsarlm(fpv_pres1_2015 ~ soy_hvst_2015 + fpv_pres_2011 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t3m4 <- errorsarlm(fpv_pres1_2015 ~ soy_hvst_2015 + fpv_pres_2011 + k_intense + eap_small + lockouts_ln + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t3m5 <- errorsarlm(pro_pres1_2015 ~ soy_hvst_2015 + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+t3m6 <- errorsarlm(pro_pres1_2015 ~ soy_hvst_2015 + k_intense + eap_small + lockouts_ln + education_10 + poverty_10 + eap_ln + rural_10 + popdens_10, 
+                   wtm, data=avr_shp@data, zero.policy=TRUE)
+
+stargazer(t3m1, t3m2, t3m3, t3m4, t3m5, t3m6,
+          title="Presidential vote and local wealth in Argentina, 2011-2015",
+          #se = list(c(rse_t3m1, rse_t3m2, rse_t3m3, rse_t3m4, rse_t3m5, rse_t3m6)),
+          covariate.labels=c("Soybean harvest 2011 (ln)", "Soybean harvest 2015 (ln)", "Lockouts 2008 (ln)",
+                             "Agricultural capital ", "Smallholding farms", "FPV vote share 2007", 
+                             "FPV vote share 2011", "Education", "Poverty", "Farms (ln)", 
+                             "Rural population (ln)", "Population density"),
+          #add.lines=list(c("Fixed effects", "YES", "YES", "YES", "YES", "YES", "YES")),
+          column.sep.width="-5pt",
+          dep.var.labels=c("FPV 2011", "FPV 2015", "Cambiemos 2015"),
+          dep.var.labels.include=TRUE,
+          digits=3,
+          float=TRUE,
+          #float.env="sidewaystable",
+          font.size="small",
+          no.space=TRUE,
+          omit="province",
+          omit.stat="f",
+          out="Table3.html",
+          order=c(1, 6, 5, 3, 4, 2, 7, 8, 9, 10, 11, 12),
+          single.row=FALSE,
+          star.cutoffs = c(0.10, 0.05, 0.01), 
+          table.placement="h!",
+          type="html"
+)
+
+```
+
