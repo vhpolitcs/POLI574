@@ -1,0 +1,152 @@
+---
+title: "POLI574 Midterm"
+author: "Mitchell Bosley"
+date: "5/26/2019"
+output: pdf_document
+---
+
+# Part 1
+
+## QUESTION 1 
+
+Note that the mean of the beta distribution is
+$$
+\mu = \frac{\alpha}{\alpha + \beta}
+$$
+and the variance
+$$
+\sigma^2 = \frac{\alpha\beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}
+$$
+We are given the $\mu = 0.6, \sigma^2 = 0.3^2 = 0.09$. Solving the system of equations yields $\alpha = 1.00, \beta = 0.67$. To check that this is correct, observe the following draws from the beta distribution:
+
+```{r}
+prior <- rbeta(10000, 1, .67)
+prior.mean <- mean(prior)
+sqrt(var(prior))
+
+plot(density(prior), type="l", col="black")
+```
+
+## QUESTION 2
+
+The MLE of $theta$ is as follows:
+$$
+ln(\mathcal{L}(\theta| y_i, n)) = \sum_i y_i \ln(\theta) + (n - \sum_i y_i)\ln(1-\theta) 
+$$
+And so 
+$$
+\frac{\delta ln(\mathcal{L}(\theta| y_i, n))}{\delta \theta} = \frac{\sum_i y_i}{\theta} - \frac{n - \sum_i y_i}{1 - \theta} = 0 \implies \hat \theta^{MLE} = \frac{\sum_i y_i}{n} = 650/1000 = 0.65 
+$$
+We can find the posterior distribution as follows:
+$$
+\begin{aligned}
+p(\theta|y_i) &\propto p(y_i|\theta)p(\theta|\alpha, \beta) \\
+&\propto \theta^{\sum_i y_i}(1 - \theta)^{n-\sum_iy_i}\theta^{\alpha - 1}\theta^{\beta - 1} \\
+&\propto \theta^{\alpha + \sum_iy_i - 1}\theta^{\beta + n - \sum_i y_i - 1} 
+\end{aligned}
+$$
+Which implies $p(\theta|y_i) \sim Beta(\alpha + \sum_iy_i, \beta + n - \sum_i y_i) \implies p(\theta|y_i) \sim Beta(651, 350.67)$.
+
+And so, the mean and variance of the posterior distribution can be determined by Monte Carlo simulation:
+
+```{r}
+posterior <- rbeta(10000, 651, 350.67)
+
+mean.posterior <- mean(rbeta(10000, 651, 350.67))
+mean.posterior
+
+var.posterior <- var(rbeta(10000, 651, 350.67))
+var.posterior
+
+ci.posterior <- quantile(posterior, probs=c(0.1, 0.9))
+ci.posterior
+
+plot(density(posterior))
+abline(v=c(mean.posterior, ci.posterior), lty=c(1, 2, 2))
+
+```
+
+# PART III
+
+```{r}
+
+# FUNCTIONS
+############
+
+# sample h function
+draw.h <- function(y, n, alpha, delta, mu, g) {
+    alpha[g] <- alpha[1] + n
+    delta[g] <- delta[1] + sum((y - mu[g - 1])^2)
+    h <- rgamma(1, alpha[g] / 2, delta[g] / 2)
+    return(h)
+}
+
+# sample mu function
+draw.mu <- function(y, n, h, mu, g) {
+    arg1 <- (h[1] * mu[1] + h[g - 2] * n * mean(y)) /
+            (h[1] + h[g - 2] * n)
+    arg2 <- 1 / (h[1] + h[g - 2] * n)
+    return(rnorm(1, arg1, arg2))
+}
+
+# gibbs sampler function
+gibbs_sampler <- function(y, n, h, alpha, delta, mu, iter, burnin) {
+  
+    # first iteration
+    h[1] <- draw.h(y, n, alpha, delta, mu, g=2)
+    
+    # all other iterations
+    for (g in 3:iter) {
+        mu[g - 1] <- draw.mu(y, n, h, mu, g)
+        h[g - 1] <- draw.h(y, n, alpha, delta, mu, g)
+    }
+    
+    # discard early iterations
+    mu <- mu[-(1:burnin)]
+    h <- h[-(1:burnin)]
+    
+    return(list(mu=mu, h=h))
+}
+
+# IMPLEMENTATION
+#################
+
+# read data
+birthDat <- read.table("~/Downloads/babiesI.data", header=TRUE)
+
+# parameters
+y <- birthDat$bwt
+n <- length(y)
+iter <- 1000
+burnin <- 500
+
+# containers
+mu <- rep(NA, iter)
+h <- rep(NA, iter)
+alpha <- rep(NA, iter)
+delta <- rep(NA, iter)
+
+#  starting values
+mu[1] <- 25
+alpha[1] <- 1
+delta[1] <- 1
+
+outcome <- gibbs_sampler(y, n, h, alpha, delta, mu, iter, burnin)
+ci.mu <- quantile(na.omit(outcome$mu), probs=c(0.025, 0.975))
+ci.h <- quantile(na.omit(outcome$h), probs=c(0.025, 0.975))
+
+# PLOTTING
+############
+
+hist(x=na.omit(outcome$mu), breaks = 50, xlab="Mu Draws", 
+     main="Histogram of Posterior Distribution of Mu", freq = F)
+abline(v=c(mean(na.omit(outcome$mu)), ci.mu), lty=c(1, 2, 2))
+
+hist(x=na.omit(outcome$h), breaks = 50, xlab="h Draws", 
+     main="Histogram of Posterior Distribution of h", freq = F)
+abline(v=c(mean(na.omit(outcome$h)), ci.h), lty=c(1, 2, 2))
+
+```
+
+
+
