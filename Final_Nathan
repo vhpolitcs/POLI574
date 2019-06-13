@@ -1,0 +1,126 @@
+#WinBUGS Code
+
+## WinBUGS code for a Linear Regression Model
+
+    model {
+    for (i in 1:N){
+     Y[i] ~ dnorm(mu.y[i], tau.y)
+	mu.y[i] <- alpha[group[i]]+ beta1*X1[i] + beta2*X2[i] + beta3[group[i]]*X3[i] + beta4*X4[i] + beta5*X5[i] + beta6*X6[i] + beta7*X7[i] + beta8*X8[i] + beta9*X9[i] + beta10*X10[i] + beta11[group[i]]*X11[i] + beta12*C2[i]
+      }
+
+	tau.y <- pow(sigma.y, -2)
+	sigma.y ~ dunif(0, 100)
+
+	beta1 ~ dnorm(0, 0.0001)
+	beta2 ~ dnorm(0, 0.0001)
+	beta4 ~ dnorm(0, 0.0001)
+	beta5 ~ dnorm(0, 0.0001)
+	beta6 ~ dnorm(0, 0.0001)
+	beta7 ~ dnorm(0, 0.0001)
+	beta8 ~ dnorm(0, 0.0001)
+	beta9 ~ dnorm(0, 0.0001)
+	beta10 ~ dnorm(0, 0.0001)
+	beta12 ~ dnorm(0, 0.0001)
+
+	for (j in 1:J){
+	alpha[j]~dnorm(mu.alpha, tau.alpha)
+	
+	beta3[j]~dnorm(mu.beta3[j], tau.beta3)
+	mu.beta3[j]<-gamma20+gamma21*Z[j]
+	
+	beta11[j]~dnorm(mu.beta11, tau.beta11)
+	}
+	mu.alpha~dnorm(0, 0.0001)
+	tau.alpha<-pow(sigma.alpha, -2)
+	sigma.alpha~dunif(0,100)
+	
+	gamma20~dnorm(0,0.0001)
+	gamma21~dnorm(0,0.0001)
+	tau.beta3<-pow(sigma.beta3, -2)
+	sigma.beta3~dunif(0,100)
+
+	mu.beta11~dnorm(0, 0.0001)
+	tau.beta11<-pow(sigma.beta11, -2)
+	sigma.beta11~dunif(0,100)
+    }
+
+##R-Code
+
+---
+title: "Final Presentation"
+author: "Nathan"
+date: "11 June 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Setup
+library(R2WinBUGS)
+Data1<-read.table("C:/Users/natha/OneDrive/UBC Vancouver/2018 T2/POLI 574 - Quantitaive Methods/Final Presentation/data.csv", sep=";",header=T)
+Data<-na.omit(Data1) 
+Group_Data<-read.table("C:/Users/natha/OneDrive/UBC Vancouver/2018 T2/POLI 574 - Quantitaive Methods/Final Presentation/Group Data.csv", sep=";",header=T)
+```
+
+```{r}
+#Create Group Indicators
+group.name<- Data$Region
+uniq.group<-unique(group.name)
+J<-length(uniq.group)
+group<-rep(NA,J)
+for(j in 1:J){
+  group[group.name==uniq.group[j]]<-j
+}
+```
+
+```{r}
+setwd("C:/Users/natha/Desktop/Final")
+
+#Setup Data
+Y<-Data$Growth; X1<- Data$X1; X2<- Data$X2; X3<- Data$X3; X4<- Data$X4; X5<- Data$X5; X6<- Data$X6; X7<- Data$X7; X8<- Data$X8; X9<- Data$X9; X10<- Data$X10; X11<- Data$X11; C2<-Data$C2; N<-length(Y); Z<-Group_Data$Z
+
+data<-list("Y","X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10", "X11", "C2", "J", "group", "N", "Z")
+
+#Setup initial values
+init1<-list(alpha=rnorm(J), beta3=rnorm(J), beta11=rnorm(J), sigma.y=runif(1), beta1=rnorm(1), beta2=rnorm(1), beta4=rnorm(1), beta5=rnorm(1), beta6=rnorm(1), beta7=rnorm(1), beta8=rnorm(1), beta9=rnorm(1), beta10=rnorm(1), beta12=rnorm(1), mu.alpha=rnorm(1), sigma.alpha=runif(1), gamma20=rnorm(1), gamma21=rnorm(1), sigma.beta3=runif(1), mu.beta11=rnorm(1),  sigma.beta11=runif(1))
+
+init2<-list(alpha=rnorm(J), beta3=rnorm(J), beta11=rnorm(J), sigma.y=runif(1), beta1=rnorm(1), beta2=rnorm(1), beta4=rnorm(1), beta5=rnorm(1), beta6=rnorm(1), beta7=rnorm(1), beta8=rnorm(1), beta9=rnorm(1), beta10=rnorm(1), beta12=rnorm(1), mu.alpha=rnorm(1), sigma.alpha=runif(1), gamma20=rnorm(1), gamma21=rnorm(1), sigma.beta3=runif(1), mu.beta11=rnorm(1),  sigma.beta11=runif(1))
+
+init3<-list(alpha=rnorm(J), beta3=rnorm(J), beta11=rnorm(J), sigma.y=runif(1), beta1=rnorm(1), beta2=rnorm(1), beta4=rnorm(1), beta5=rnorm(1), beta6=rnorm(1), beta7=rnorm(1), beta8=rnorm(1), beta9=rnorm(1), beta10=rnorm(1), beta12=rnorm(1), mu.alpha=rnorm(1), sigma.alpha=runif(1), gamma20=rnorm(1), gamma21=rnorm(1), sigma.beta3=runif(1), mu.beta11=rnorm(1),  sigma.beta11=runif(1))
+
+inits<-list(init1, init2, init3)
+
+#setup parameters
+parameters=c("alpha", "sigma.alpha", "sigma.y", "beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8", "beta9", "beta10", "beta11", "beta12", "mu.beta3", "mu.beta11", "gamma20", "gamma21", "sigma.beta3", "sigma.beta11")
+
+#Test bugs
+Model.fit=bugs(data, inits, parameters, 
+               "Final.bug",
+               n.chains=3, n.thin=2, n.burnin=1000,
+               n.iter=2000,
+               bugs.directory="C:/Users/natha/Desktop/WinBUGS14",
+               working.directory = getwd(),
+               debug=F)
+```
+
+```{r}
+library(coda)
+setwd("C:/Users/natha/Desktop/Final")
+chain1 <- read.coda(output.file="coda1.txt",
+index.file="codaIndex.txt", quiet=T)
+
+chain2 <- read.coda(output.file="coda2.txt",
+index.file="codaIndex.txt", quiet=T)
+
+chain3 <- read.coda(output.file="coda3.txt",
+index.file="codaIndex.txt", quiet=T)
+
+MCMC <- rbind(chain1, chain2, chain3)
+
+colnames(MCMC)
+```
+
